@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.nuget-packages*/
+**/.nuget-http*/
+**/.dotnet-home/
+*.db
+*.db-shm
+*.db-wal
