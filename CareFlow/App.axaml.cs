@@ -26,9 +26,11 @@ public partial class App : Application
             var services = new ServiceCollection();
             services.AddDbContextFactory<CareFlowDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
             services.AddSingleton<BookingService>();
+            services.AddSingleton<DatabaseInitializer>();
+            services.AddTransient<MainViewModel>();
             var provider = services.BuildServiceProvider();
             desktop.Exit += (_, _) => provider.Dispose();
-            desktop.MainWindow = new MainWindow { DataContext = new MainViewModel(provider.GetRequiredService<BookingService>(), provider.GetRequiredService<IDbContextFactory<CareFlowDbContext>>()) };
+            desktop.MainWindow = new MainWindow { DataContext = provider.GetRequiredService<MainViewModel>() };
         }
         base.OnFrameworkInitializationCompleted();
     }

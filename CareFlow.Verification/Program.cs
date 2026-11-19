@@ -11,7 +11,7 @@ var passed = new List<string>();
 
 try
 {
-    await using (var db = await factory.CreateDbContextAsync()) await db.Database.MigrateAsync();
+    await new DatabaseInitializer(factory).InitializeAsync();
 
     var initial = await service.GetAvailabilityAsync(date);
     Check(initial.Count == 4 && initial.All(x => x.Remaining == x.DailyCapacity), "AC-01 initial availability uses persisted capacities");

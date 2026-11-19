@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareFlow.Services;
 
+public sealed record PatientOption(int Id, string FullName);
+
 public sealed record ServiceAvailability(int ServiceId, string Name, int DailyCapacity, int Booked, int Remaining);
 
 public sealed record BookingListItem(int Id, string PatientName, DateOnly Date, string Services)
@@ -14,10 +16,11 @@ public sealed record BookingListItem(int Id, string PatientName, DateOnly Date, 
 
 public sealed class BookingService(IDbContextFactory<CareFlowDbContext> contextFactory)
 {
-    public async Task<List<Patient>> GetPatientsAsync()
+    public async Task<List<PatientOption>> GetPatientsAsync()
     {
         await using var db = await contextFactory.CreateDbContextAsync();
-        return await db.Patients.AsNoTracking().OrderBy(x => x.FullName).ToListAsync();
+        return await db.Patients.AsNoTracking().OrderBy(x => x.FullName)
+            .Select(x => new PatientOption(x.Id, x.FullName)).ToListAsync();
     }
 
     public async Task<List<ServiceAvailability>> GetAvailabilityAsync(DateOnly date)

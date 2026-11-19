@@ -1,10 +1,7 @@
 using System.Collections.ObjectModel;
-using CareFlow.Data;
-using CareFlow.Models;
 using CareFlow.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.EntityFrameworkCore;
 using BookingManager = CareFlow.Services.BookingService;
 
 namespace CareFlow.ViewModels;
@@ -12,13 +9,13 @@ namespace CareFlow.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     private readonly BookingManager _bookingService;
-    private readonly IDbContextFactory<CareFlowDbContext> _contextFactory;
+    private readonly DatabaseInitializer _databaseInitializer;
 
-    public ObservableCollection<Patient> Patients { get; } = [];
+    public ObservableCollection<PatientOption> Patients { get; } = [];
     public ObservableCollection<ServiceOptionViewModel> Services { get; } = [];
     public ObservableCollection<BookingListItem> Bookings { get; } = [];
 
-    [ObservableProperty] private Patient? _selectedPatient;
+    [ObservableProperty] private PatientOption? _selectedPatient;
     [ObservableProperty] private DateTimeOffset _bookingDate = DateTimeOffset.Now.Date;
     [ObservableProperty] private BookingListItem? _selectedBooking;
     [ObservableProperty] private bool _isBusy;
@@ -28,10 +25,10 @@ public partial class MainViewModel : ViewModelBase
         ? "Choose a booking to see its patient, date, and services."
         : $"Patient: {SelectedBooking.PatientName}\nDate: {SelectedBooking.Date:MMMM d, yyyy}\nServices: {SelectedBooking.Services}";
 
-    public MainViewModel(BookingManager bookingService, IDbContextFactory<CareFlowDbContext> contextFactory)
+    public MainViewModel(BookingManager bookingService, DatabaseInitializer databaseInitializer)
     {
         _bookingService = bookingService;
-        _contextFactory = contextFactory;
+        _databaseInitializer = databaseInitializer;
         _ = InitializeAsync();
     }
 
@@ -42,8 +39,7 @@ public partial class MainViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            await using (var db = await _contextFactory.CreateDbContextAsync())
-                await db.Database.MigrateAsync();
+            await _databaseInitializer.InitializeAsync();
             Patients.Clear();
             foreach (var patient in await _bookingService.GetPatientsAsync()) Patients.Add(patient);
             SelectedPatient = Patients.FirstOrDefault();
