@@ -9,8 +9,8 @@ CareFlow is a small Avalonia desktop application for outpatient diagnostic booki
 
 ## Pair members
 
-- Student 1: [Enter name]
-- Student 2: [Enter name]
+- Student 1: Canarejo, John Paul
+- Student 2: Dales, James A. 
 
 The `CareFlow.sln` solution contains the app and its verification runner. From this folder's root, `dotnet build .\CareFlow.sln -m:1` builds both projects.
 
