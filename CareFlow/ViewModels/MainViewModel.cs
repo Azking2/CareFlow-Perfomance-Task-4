@@ -33,7 +33,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     partial void OnSelectedBookingChanged(BookingListItem? value) => OnPropertyChanged(nameof(SelectedBookingDetails));
-
+    partial void OnBookingDateChanged(DateTimeOffset value) => _ = RefreshAvailabilityAsync();
     private async Task InitializeAsync()
     {
         IsBusy = true;
@@ -76,7 +76,7 @@ public partial class MainViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            if (SelectedPatient is null) throw new InvalidOperationException("Select a patient first.");
+            if (SelectedPatient is null) throw new BookingRejectedException("Select a patient first.");
             var date = DateOnly.FromDateTime(BookingDate.LocalDateTime);
             var selectedIds = Services.Where(x => x.IsSelected).Select(x => x.Id).ToList();
             await _bookingService.CreateBookingAsync(SelectedPatient.Id, date, selectedIds);
@@ -87,7 +87,9 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            var message = FriendlyError(ex);
+            var message = ex is BookingRejectedException
+                ? ex.Message
+                : "A database error stopped the operation. No booking was confirmed.";
             await RefreshAvailabilityAsync();
             StatusMessage = $"Booking not saved: {message}";
         }
@@ -105,7 +107,8 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex) { StatusMessage = $"Could not load bookings: {FriendlyError(ex)}"; }
     }
 
-    private static string FriendlyError(Exception ex) => ex is InvalidOperationException
+    // Only business-rule messages are shown as written; technical errors get a generic message.
+    private static string FriendlyError(Exception ex) => ex is BookingRejectedException
         ? ex.Message
-        : "A database error stopped the operation. No booking was confirmed.";
+        : "An unexpected database error occurred. Please try again.";
 }

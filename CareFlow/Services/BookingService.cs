@@ -45,22 +45,22 @@ public sealed class BookingService(IDbContextFactory<CareFlowDbContext> contextF
 
     public async Task CreateBookingAsync(int patientId, DateOnly date, IReadOnlyCollection<int> serviceIds)
     {
-        if (date < DateOnly.FromDateTime(DateTime.Now)) throw new InvalidOperationException("The booking date cannot be in the past.");
-        if (serviceIds.Count is < 1 or > 3) throw new InvalidOperationException("Choose one to three services.");
-        if (serviceIds.Distinct().Count() != serviceIds.Count) throw new InvalidOperationException("Each service can only be selected once.");
+        if (date < DateOnly.FromDateTime(DateTime.Now)) throw new BookingRejectedException("The booking date cannot be in the past.");
+        if (serviceIds.Count is < 1 or > 3) throw new BookingRejectedException("Choose one to three services.");
+        if (serviceIds.Distinct().Count() != serviceIds.Count) throw new BookingRejectedException("Each service can only be selected once.");
 
         await using var db = await contextFactory.CreateDbContextAsync();
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-        if (!await db.Patients.AnyAsync(x => x.Id == patientId)) throw new InvalidOperationException("Select an existing patient.");
+        if (!await db.Patients.AnyAsync(x => x.Id == patientId)) throw new BookingRejectedException("Select an existing patient.");
 
         var services = await db.DiagnosticServices.Where(x => serviceIds.Contains(x.Id)).ToListAsync();
-        if (services.Count != serviceIds.Count) throw new InvalidOperationException("One or more selected services are unavailable.");
+        if (services.Count != serviceIds.Count) throw new BookingRejectedException("One or more selected services are unavailable.");
 
         foreach (var service in services)
         {
             var booked = await db.BookingServices.CountAsync(x => x.DiagnosticServiceId == service.Id && x.Booking.BookingDate == date);
             if (booked >= service.DailyCapacity)
-                throw new InvalidOperationException($"{service.Name} is fully booked for {date:MMM d, yyyy}. Refresh availability and choose another service or date.");
+                throw new BookingRejectedException($"{service.Name} is fully booked for {date:MMM d, yyyy}. Refresh availability and choose another service or date.");
         }
 
         var booking = new Booking { PatientId = patientId, BookingDate = date, CreatedAt = DateTime.Now };

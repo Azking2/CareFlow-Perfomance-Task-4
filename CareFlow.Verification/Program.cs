@@ -77,7 +77,7 @@ void Check(bool condition, string description)
 static async Task ExpectRejected(Func<Task> action)
 {
     try { await action(); }
-    catch (InvalidOperationException) { return; }
+    catch (BookingRejectedException) { return; }
     throw new Exception("Expected the invalid request to be rejected.");
 }
 
